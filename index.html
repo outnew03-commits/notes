@@ -1,23 +1,109 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>My Notes</title>
+<meta charset="UTF-8">
+<title>Notes</title>
 
 <style>
 
 body{
+margin:0;
+font-family:Arial;
 background:#202124;
 color:white;
-font-family:Arial;
-margin:0;
 }
 
-.header{
+/* top bar */
+
+.topbar{
+display:flex;
+align-items:center;
+padding:12px;
 background:#303134;
-padding:15px;
-text-align:center;
-font-size:22px;
 }
+
+.menu{
+font-size:22px;
+margin-right:15px;
+cursor:pointer;
+}
+
+.title{
+font-size:20px;
+}
+
+/* side menu */
+
+.sidemenu{
+position:fixed;
+left:-250px;
+top:0;
+width:250px;
+height:100%;
+background:#303134;
+padding-top:20px;
+transition:0.3s;
+}
+
+.sidemenu div{
+padding:15px 20px;
+cursor:pointer;
+}
+
+.sidemenu div:hover{
+background:#3c4043;
+}
+
+/* search */
+
+.searchbox{
+margin:15px;
+background:#303134;
+padding:10px;
+border-radius:8px;
+}
+
+.searchbox input{
+width:100%;
+background:transparent;
+border:none;
+color:white;
+outline:none;
+}
+
+/* note input */
+
+.noteinput{
+background:#303134;
+margin:20px auto;
+width:400px;
+padding:10px;
+border-radius:10px;
+}
+
+.noteinput textarea{
+width:100%;
+background:transparent;
+border:none;
+color:white;
+outline:none;
+resize:none;
+}
+
+.addbtn{
+margin-top:10px;
+padding:6px 10px;
+cursor:pointer;
+}
+
+/* sections */
+
+.section{
+padding:10px 20px;
+color:#aaa;
+}
+
+/* notes grid */
 
 .notes{
 display:grid;
@@ -26,63 +112,143 @@ gap:20px;
 padding:20px;
 }
 
+/* note card */
+
 .note{
-background:#2b2b2b;
+background:#303134;
 padding:15px;
-border-radius:15px;
-min-height:120px;
+border-radius:10px;
+position:relative;
 }
+
+.note button{
+margin-top:10px;
+margin-right:5px;
+cursor:pointer;
+}
+
+/* floating button */
 
 .fab{
 position:fixed;
 bottom:25px;
 right:25px;
-background:#8ab4f8;
 width:60px;
 height:60px;
+background:#8ab4f8;
 border-radius:50%;
 display:flex;
 align-items:center;
 justify-content:center;
 font-size:30px;
-cursor:pointer;
 color:black;
-}
-
-input{
-padding:10px;
-width:200px;
+cursor:pointer;
 }
 
 </style>
 
 <script>
 
+let notes = JSON.parse(localStorage.getItem("notes")) || [];
+
+function saveNotes(){
+localStorage.setItem("notes",JSON.stringify(notes));
+}
+function checkSecret(value){
+
+if(value==="7777"){
+window.location="chat.html";
+}
+
+}
+function renderNotes(){
+
+let pinnedDiv=document.getElementById("pinnedNotes");
+let notesDiv=document.getElementById("notes");
+let archiveDiv=document.getElementById("archiveNotes");
+let trashDiv=document.getElementById("trashNotes");
+
+pinnedDiv.innerHTML="";
+notesDiv.innerHTML="";
+archiveDiv.innerHTML="";
+trashDiv.innerHTML="";
+
+notes.forEach((n,i)=>{
+
+let div=document.createElement("div");
+div.className="note";
+div.innerHTML=`
+<div>${n.text}</div>
+<button onclick="pinNote(${i})">${n.pinned?"Unpin":"Pin"}</button>
+<button onclick="archiveNote(${i})">Archive</button>
+<button onclick="deleteNote(${i})">Delete</button>
+`;
+
+if(n.trash){
+trashDiv.appendChild(div);
+}
+else if(n.archive){
+archiveDiv.appendChild(div);
+}
+else if(n.pinned){
+pinnedDiv.appendChild(div);
+}
+else{
+notesDiv.appendChild(div);
+}
+
+});
+
+}
+
 function addNote(){
 
-let text = prompt("Write your note");
+let text=document.getElementById("noteText").value;
 
-if(text){
+if(text!=""){
 
-let note = document.createElement("div");
-note.className="note";
-note.innerText=text;
+notes.push({
+text:text,
+pinned:false,
+archive:false,
+trash:false
+});
 
-document.getElementById("notes").appendChild(note);
+document.getElementById("noteText").value="";
+saveNotes();
+renderNotes();
+
+}
 
 }
 
+function pinNote(i){
+notes[i].pinned=!notes[i].pinned;
+saveNotes();
+renderNotes();
 }
 
-function checkCode(){
-
-let code = prompt("Enter secret code");
-
-if(code=="7777"){
-window.location="chat html";
+function archiveNote(i){
+notes[i].archive=true;
+saveNotes();
+renderNotes();
 }
 
+function deleteNote(i){
+notes[i].trash=true;
+saveNotes();
+renderNotes();
 }
+
+function openMenu(){
+document.getElementById("menu").style.left="0";
+}
+
+function closeMenu(){
+document.getElementById("menu").style.left="-250px";
+}
+
+window.onload=renderNotes;
 
 </script>
 
@@ -90,15 +256,61 @@ window.location="chat html";
 
 <body>
 
-<div class="header" onclick="checkCode()">Keep</div>
+<!-- side menu -->
 
-<div class="notes" id="notes">
+<div class="sidemenu" id="menu">
 
-<div class="note">My first note</div>
+<div onclick="closeMenu()">✖ Close</div>
+<div>Notes</div>
+<div>Archive</div>
+<div>Trash</div>
 
 </div>
 
-<div class="fab" onclick="addNote()">+</div>
+<!-- top bar -->
+
+<div class="topbar">
+<div class="menu" onclick="openMenu()">☰</div>
+<div class="title">Notes</div>
+</div>
+
+<!-- search -->
+
+<input placeholder="Search Notes" onkeyup="checkSecret(this.value)">
+
+<!-- note input -->
+
+<div class="noteinput">
+
+<textarea id="noteText" rows="3" placeholder="Take a note..."></textarea>
+
+<button class="addbtn" onclick="addNote()">Add Note</button>
+
+</div>
+
+<!-- pinned -->
+
+<div class="section">Pinned</div>
+<div class="notes" id="pinnedNotes"></div>
+
+<!-- normal notes -->
+
+<div class="section">Notes</div>
+<div class="notes" id="notes"></div>
+
+<!-- archive -->
+
+<div class="section">Archive</div>
+<div class="notes" id="archiveNotes"></div>
+
+<!-- trash -->
+
+<div class="section">Trash</div>
+<div class="notes" id="trashNotes"></div>
+
+<!-- floating button -->
+
+<div class="fab">+</div>
 
 </body>
 </html>
